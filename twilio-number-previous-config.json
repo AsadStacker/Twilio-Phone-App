@@ -1,0 +1,14 @@
+{
+  "note": "Previous Voice configuration for this Twilio number, saved before pointing it at this app. To restore, POST these values back to /2010-04-01/Accounts/<AccountSid>/IncomingPhoneNumbers/PNea2ffa6e36bfa43eca1c0d4d7bf76d0f.json",
+  "saved_at": "2026-08-31T16:39:29.506Z",
+  "previous": {
+    "phone_number": "+17083506720",
+    "sid": "PNea2ffa6e36bfa43eca1c0d4d7bf76d0f",
+    "voice_url": "https://voice-ivr-8105-6r5z6c.twil.io/voice-ivr",
+    "voice_method": "POST",
+    "voice_fallback_url": "",
+    "voice_application_sid": "",
+    "status_callback": "",
+    "status_callback_method": "POST"
+  }
+}
