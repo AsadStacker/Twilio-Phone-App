@@ -24,6 +24,12 @@ interface TwilioConfig {
   twimlAppSid: string;
   phoneNumber: string;
   appUrl: string;
+  /** Conversational Intelligence service for post-call transcripts. */
+  intelligenceServiceSid: string;
+  /** `google` (default) or `deepgram`; blank leaves Twilio's default. */
+  transcriptionEngine: string;
+  /** BCP-47 code for the speech engine. Blank leaves Twilio's default (en-US). */
+  transcriptionLanguage: string;
 }
 
 function readEnv(name: string): string {
@@ -59,6 +65,9 @@ export function getTwilioConfig(): TwilioConfig {
     twimlAppSid: readEnv('TWILIO_TWIML_APP_SID'),
     phoneNumber: readEnv('TWILIO_PHONE_NUMBER'),
     appUrl: readEnv('NEXT_PUBLIC_APP_URL'),
+    intelligenceServiceSid: readEnv('TWILIO_INTELLIGENCE_SERVICE_SID'),
+    transcriptionEngine: readEnv('TWILIO_TRANSCRIPTION_ENGINE'),
+    transcriptionLanguage: readEnv('TWILIO_TRANSCRIPTION_LANGUAGE'),
   };
 
   return config;

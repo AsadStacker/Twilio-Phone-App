@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "setup:intelligence": "node --env-file=.env.local scripts/setup-intelligence-service.mjs"
   },
   "dependencies": {
     "@twilio/voice-sdk": "^2.18.3",

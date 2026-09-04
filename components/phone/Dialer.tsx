@@ -14,7 +14,11 @@ import CallStatus from '@/components/phone/CallStatus';
 import CallTimer from '@/components/phone/CallTimer';
 import DialPad from '@/components/phone/DialPad';
 import IncomingCall from '@/components/phone/IncomingCall';
+import MicrophonePicker from '@/components/phone/MicrophonePicker';
 import PhoneInput from '@/components/phone/PhoneInput';
+import TranscriptPanel from '@/components/phone/TranscriptPanel';
+import TranscriptionControls from '@/components/phone/TranscriptionControls';
+import { useCallTranscript } from '@/hooks/useCallTranscript';
 import { useTwilioPhone } from '@/hooks/useTwilioPhone';
 import { toE164, validateDialTarget } from '@/lib/twilio/validation';
 
@@ -24,6 +28,7 @@ export default function Dialer() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const {
+    callSid,
     callState,
     deviceStatus,
     durationSeconds,
@@ -31,9 +36,25 @@ export default function Dialer() {
     hasIncomingCall,
     identity,
     incomingFrom,
+    inputLevel,
     isMuted,
+    isTestingMic,
+    isTranscribing,
+    micWarning,
+    microphones,
     remoteNumber,
+    selectedMicrophoneId,
+    transcription,
   } = phone;
+
+  // Only subscribes once Twilio has assigned a CallSid, and only when captions
+  // are actually wanted -- an idle EventSource would hold a server connection
+  // open for nothing.
+  const transcript = useCallTranscript(
+    transcription.liveCaptions || transcription.postCallTranscript
+      ? callSid
+      : null,
+  );
 
   const inCall =
     callState === 'calling' || callState === 'ringing' || callState === 'connected';
@@ -142,6 +163,28 @@ export default function Dialer() {
             />
           </div>
 
+          <div className="mt-5">
+            <MicrophonePicker
+              microphones={microphones}
+              selectedId={selectedMicrophoneId}
+              level={inputLevel}
+              live={callState === 'connected'}
+              isTesting={isTestingMic}
+              warning={micWarning}
+              onSelect={phone.selectMicrophone}
+              onToggleTest={phone.toggleMicTest}
+            />
+          </div>
+
+          <div className="mt-4">
+            <TranscriptionControls
+              settings={transcription}
+              isTranscribing={isTranscribing}
+              inCall={inCall}
+              onChange={phone.setTranscriptionOption}
+            />
+          </div>
+
           {/* Reserve space so the layout does not jump when errors appear. */}
           <div className="mt-5 min-h-16">
             {visibleError ? (
@@ -181,14 +224,25 @@ export default function Dialer() {
           </div>
         </section>
 
-        {/* History */}
-        <CallHistory
-          onSelectNumber={(number) => {
-            if (inCall) return;
-            setValidationError(null);
-            setInput(number);
-          }}
-        />
+        {/* Transcript, then history */}
+        <div className="flex min-w-0 flex-col gap-6">
+          <TranscriptPanel
+            liveCues={transcript.cues}
+            batchCues={transcript.batchCues}
+            isStreaming={transcript.isStreaming}
+            error={transcript.error}
+            enabled={transcription.liveCaptions}
+            callSid={callSid}
+          />
+
+          <CallHistory
+            onSelectNumber={(number) => {
+              if (inCall) return;
+              setValidationError(null);
+              setInput(number);
+            }}
+          />
+        </div>
       </div>
     </>
   );

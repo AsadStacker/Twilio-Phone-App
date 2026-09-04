@@ -115,6 +115,9 @@ export function describeTwilioError(error: unknown): string {
     if (name === 'NotReadableError' || name === 'TrackStartError') {
       return 'Your microphone is already in use by another application.';
     }
+    if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') {
+      return 'The selected microphone is no longer available. Pick another one.';
+    }
 
     if (typeof err.code === 'number') {
       return `Unable to complete the call (Twilio error ${err.code}).`;
@@ -126,18 +129,4 @@ export function describeTwilioError(error: unknown): string {
   }
 
   return 'Something went wrong. Please try again.';
-}
-
-/**
- * Prompts for microphone access up front so permission is settled before a
- * call starts, and so the failure is reportable as a clear message.
- */
-export async function requestMicrophoneAccess(): Promise<void> {
-  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-    throw new Error('This browser does not support microphone access.');
-  }
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  // Release the probe stream immediately; the SDK acquires its own.
-  stream.getTracks().forEach((track) => track.stop());
 }
