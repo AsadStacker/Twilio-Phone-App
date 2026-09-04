@@ -6,7 +6,8 @@
       "Bash(npx eslint *)",
       "Bash(echo \"tsc=$?\")",
       "Bash(echo \"eslint=$?\")",
-      "PowerShell($conns = Get-NetTCPConnection -LocalPort 3125 -State Listen -ErrorAction SilentlyContinue; if \\($conns\\) { $conns | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } ; \"stopped\" } else { \"no listener\" })"
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 3125 -State Listen -ErrorAction SilentlyContinue; if \\($conns\\) { $conns | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } ; \"stopped\" } else { \"no listener\" })",
+      "Bash(npx next *)"
     ]
   }
 }

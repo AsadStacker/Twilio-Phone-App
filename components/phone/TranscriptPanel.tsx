@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import type { BatchStatus } from '@/hooks/useCallTranscript';
 import type { TranscriptCue } from '@/lib/types';
 
 interface TranscriptPanelProps {
   liveCues: TranscriptCue[];
   /** Twilio's post-call transcript. Empty until it arrives. */
   batchCues: TranscriptCue[];
+  batchStatus: BatchStatus;
+  batchMessage: string | null;
+  batchSavedLocally: boolean;
+  onRetryBatch: () => void;
   isStreaming: boolean;
   error: string | null;
   /** False when the captions toggle is off, so the panel can explain itself. */
@@ -28,6 +33,10 @@ type Tab = 'live' | 'batch';
 export default function TranscriptPanel({
   liveCues,
   batchCues,
+  batchStatus,
+  batchMessage,
+  batchSavedLocally,
+  onRetryBatch,
   isStreaming,
   error,
   enabled,
@@ -59,6 +68,17 @@ export default function TranscriptPanel({
             <span className="text-[11px] text-slate-500">
               {isStreaming ? 'Connected' : 'Waiting for Twilio…'}
             </span>
+          ) : null}
+
+          {tab === 'batch' && batchStatus === 'processing' ? (
+            <span className="flex items-center gap-1.5 text-[11px] text-amber-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+              Twilio is transcribing…
+            </span>
+          ) : null}
+
+          {tab === 'batch' && batchStatus === 'ready' && batchSavedLocally ? (
+            <span className="text-[11px] text-emerald-300">Saved on server</span>
           ) : null}
 
           <div
@@ -104,6 +124,13 @@ export default function TranscriptPanel({
       >
         {cues.length > 0 ? (
           cues.map((cue) => <CueLine key={cue.id} cue={cue} />)
+        ) : tab === 'batch' ? (
+          <BatchEmptyState
+            status={batchStatus}
+            message={batchMessage}
+            callSid={callSid}
+            onRetry={onRetryBatch}
+          />
         ) : (
           <EmptyState tab={tab} enabled={enabled} callSid={callSid} />
         )}
@@ -162,6 +189,58 @@ function CueLine({ cue }: { cue: TranscriptCue }) {
       >
         {cue.text}
       </p>
+    </div>
+  );
+}
+
+/**
+ * Explains the post-call tab.
+ *
+ * It has more states than the live tab because the transcript is produced
+ * asynchronously by Twilio after the call, so "nothing here" can mean waiting,
+ * never-recorded, or failed -- and those need different things from the reader.
+ */
+function BatchEmptyState({
+  status,
+  message,
+  callSid,
+  onRetry,
+}: {
+  status: BatchStatus;
+  message: string | null;
+  callSid: string | null;
+  onRetry: () => void;
+}) {
+  if (!callSid) {
+    return <p className="text-sm text-slate-500">No call yet.</p>;
+  }
+
+  const canRetry = status === 'processing' || status === 'error';
+
+  const text =
+    message ??
+    {
+      idle: 'Twilio’s transcript appears here after the call ends, if the post-call toggle was on.',
+      processing:
+        'Twilio is transcribing the recording. This usually takes a minute or two after the call ends.',
+      ready: 'No speech was transcribed for this call.',
+      none: 'This call was not recorded, so Twilio has no transcript for it.',
+      failed: 'Twilio could not transcribe this recording.',
+      error: 'Could not fetch the transcript.',
+    }[status];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-slate-500">{text}</p>
+      {canRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-200 transition hover:bg-white/10"
+        >
+          Check again
+        </button>
+      ) : null}
     </div>
   );
 }

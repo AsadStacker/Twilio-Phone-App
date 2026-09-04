@@ -47,17 +47,22 @@ export default function Dialer() {
     transcription,
   } = phone;
 
+  const inCall =
+    callState === 'calling' || callState === 'ringing' || callState === 'connected';
+
   // Only subscribes once Twilio has assigned a CallSid, and only when captions
   // are actually wanted -- an idle EventSource would hold a server connection
   // open for nothing.
+  //
+  // The post-call transcript is only worth asking for once the call is over and
+  // the recording exists, so polling starts when the call leaves the live
+  // states rather than as soon as there is a CallSid.
   const transcript = useCallTranscript(
     transcription.liveCaptions || transcription.postCallTranscript
       ? callSid
       : null,
+    transcription.postCallTranscript && !inCall && Boolean(callSid),
   );
-
-  const inCall =
-    callState === 'calling' || callState === 'ringing' || callState === 'connected';
 
   /** Once connected the keypad sends DTMF tones instead of editing the input. */
   const keypadSendsDtmf = callState === 'connected';
@@ -229,6 +234,10 @@ export default function Dialer() {
           <TranscriptPanel
             liveCues={transcript.cues}
             batchCues={transcript.batchCues}
+            batchStatus={transcript.batchStatus}
+            batchMessage={transcript.batchMessage}
+            batchSavedLocally={transcript.batchSavedLocally}
+            onRetryBatch={transcript.refetchBatch}
             isStreaming={transcript.isStreaming}
             error={transcript.error}
             enabled={transcription.liveCaptions}

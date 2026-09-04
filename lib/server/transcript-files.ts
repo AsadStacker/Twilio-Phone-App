@@ -119,14 +119,23 @@ export async function readLiveCues(callSid: string): Promise<TranscriptCue[]> {
   }
 }
 
-/** Writes the Conversational Intelligence transcript for a call. */
+/**
+ * Writes the Conversational Intelligence transcript for a call, as JSON lines
+ * and as readable text.
+ *
+ * Returns whether anything was actually written, so a caller can tell the
+ * difference between "saved" and "saving is switched off or the disk is
+ * read-only". Reporting that honestly matters more than it looks: a save that
+ * quietly does nothing is indistinguishable from a save that worked.
+ */
 export async function writeBatchTranscript(
   callSid: string,
   cues: readonly TranscriptCue[],
-): Promise<void> {
+): Promise<boolean> {
   const jsonl = filePath(callSid, 'batch.jsonl');
-  if (!jsonl) return;
-  if (!(await ensureDir())) return;
+  const txt = filePath(callSid, 'batch.txt');
+  if (!jsonl || !txt) return false;
+  if (!(await ensureDir())) return false;
 
   try {
     await writeFile(
@@ -134,8 +143,15 @@ export async function writeBatchTranscript(
       cues.map((cue) => JSON.stringify(cue)).join('\n') + (cues.length ? '\n' : ''),
       'utf8',
     );
+    await writeFile(
+      txt,
+      cues.map(readableLine).join('\n') + (cues.length ? '\n' : ''),
+      'utf8',
+    );
+    return true;
   } catch (error) {
     console.warn('[transcript-files] Could not write batch transcript', error);
+    return false;
   }
 }
 
